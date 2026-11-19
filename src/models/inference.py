@@ -14,6 +14,7 @@ from transformers import AutoTokenizer
 from src.data.preprocessing import MultiTaskLabelEncoder, normalize_text
 from src.models.classifier import SemanticSafetyClassifier
 from src.models.multitask_model import MultitaskSafetyModel
+from src.models.risk_scorer import DynamicHarmScorer
 from src.utils.config import (
     CHECKPOINTS_DIR,
     HEAD_CONFIG,
@@ -41,6 +42,7 @@ class SafetyInferenceEngine:
         self.model_name = model_name_or_path
         self.label_encoder = MultiTaskLabelEncoder()
         self.semantic_classifier = SemanticSafetyClassifier()
+        self.harm_scorer = DynamicHarmScorer()
 
         logger.info(f"Loading tokenizer for: {model_name_or_path}")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
@@ -115,8 +117,9 @@ class SafetyInferenceEngine:
 
         latency_ms = round((time.time() - start_time) * 1000, 2)
 
-        # Run semantic safety classifier
+        # Run semantic safety classifier and dynamic harm scorer
         semantic_res = self.semantic_classifier.predict(clean_text)
+        risk_metrics = self.harm_scorer.calculate_risk(clean_text)
 
         predictions: Dict[str, str] = {}
         confidences: Dict[str, float] = {}
@@ -134,6 +137,13 @@ class SafetyInferenceEngine:
 
                 # Blended probability
                 blended = 0.6 * nn_probs + 0.4 * sem_probs
+
+                # Dynamically elevate risk if negative words are present
+                if head == "risk_level" and risk_metrics["risk_score"] >= 70.0:
+                    blended = np.array([0.02, 0.08, 0.90], dtype=float)
+                elif head == "risk_level" and risk_metrics["risk_score"] >= 40.0 and blended[2] < 0.5:
+                    blended = np.array([0.15, 0.70, 0.15], dtype=float)
+
                 pred_idx = int(blended.argmax())
                 pred_label = self.label_encoder.decode_index(head, pred_idx)
                 confidence = float(blended[pred_idx])
@@ -148,6 +158,12 @@ class SafetyInferenceEngine:
             for head, classes in HEAD_CONFIG.items():
                 pred_label = semantic_res.get(head, classes[0])
                 conf = semantic_res["confidences"].get(head, 0.90)
+
+                # Dynamically elevate risk if negative words are present
+                if head == "risk_level" and risk_metrics["risk_score"] >= 70.0:
+                    pred_label = "High"
+                    conf = max(conf, 0.95)
+
                 predictions[head] = pred_label
                 confidences[head] = round(conf, 4)
                 all_probabilities[head] = semantic_res["probabilities"].get(head, {})
@@ -170,6 +186,9 @@ class SafetyInferenceEngine:
             "confidences": confidences,
             "probabilities": all_probabilities,
             "explanation": explanation,
+            "risk_score": risk_metrics["risk_score"],
+            "detected_negative_words": risk_metrics["detected_negative_words"],
+            "detected_mitigators": risk_metrics["detected_mitigators"],
             "device": str(self.device),
             "model_name": self.model_name,
         }

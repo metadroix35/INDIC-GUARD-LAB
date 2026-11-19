@@ -92,6 +92,9 @@ def render_analyzer_page(selected_model_name: str):
         }
         r_style = risk_colors.get(risk, risk_colors["Low"])
 
+        risk_score = result.get("risk_score", 15.0)
+        neg_words = result.get("detected_negative_words", [])
+
         st.markdown(
             f"""
             <div style="background: {r_style['bg']}; border: 1px solid {r_style['border']}; border-radius: 8px; padding: 16px 20px; margin: 20px 0px 24px 0px; display: flex; justify-content: space-between; align-items: center;">
@@ -99,9 +102,13 @@ def render_analyzer_page(selected_model_name: str):
                     <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: {r_style['text']}; font-weight: 700;">
                         ASSESSED RISK LEVEL
                     </div>
-                    <div style="font-size: 1.6rem; font-weight: 800; color: #f8fafc; margin-top: 2px;">
-                        {risk} Risk
+                    <div style="font-size: 1.6rem; font-weight: 800; color: #f8fafc; margin-top: 2px; display: flex; align-items: baseline; gap: 12px;">
+                        <span>{risk} Risk</span>
+                        <span style="font-size: 0.95rem; font-weight: 600; color: {r_style['text']}; background: rgba(0,0,0,0.3); padding: 2px 10px; border-radius: 12px; border: 1px solid {r_style['border']};">
+                            Score: {risk_score}/100
+                        </span>
                     </div>
+                    {f'<div style="font-size: 0.78rem; color: #f87171; margin-top: 6px;">⚠️ Risk score dynamically elevated due to detected indicators: <span style="font-family: monospace; color: #fca5a5;">{", ".join(neg_words)}</span></div>' if neg_words else ''}
                 </div>
                 <div style="text-align: right; font-size: 0.8rem; color: #94a3b8;">
                     <div>Latency: <span style="color: #f8fafc; font-family: monospace;">{result['latency_ms']} ms</span></div>
