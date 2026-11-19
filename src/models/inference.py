@@ -138,11 +138,23 @@ class SafetyInferenceEngine:
                 # Blended probability
                 blended = 0.6 * nn_probs + 0.4 * sem_probs
 
-                # Dynamically elevate risk if negative words are present
+                # Dynamically elevate risk if negative words or jailbreak pretext are present
                 if head == "risk_level" and risk_metrics["risk_score"] >= 70.0:
-                    blended = np.array([0.02, 0.08, 0.90], dtype=float)
+                    blended = np.array([0.01, 0.04, 0.95], dtype=float)
                 elif head == "risk_level" and risk_metrics["risk_score"] >= 40.0 and blended[2] < 0.5:
                     blended = np.array([0.15, 0.70, 0.15], dtype=float)
+                elif head == "context" and risk_metrics.get("is_jailbreak_concealment"):
+                    # Fictional is index 2 in CONTEXT_CLASSES: ["Academic", "Historical", "Fictional", "Preventive", "Real-world"]
+                    blended = np.array([0.02, 0.02, 0.92, 0.02, 0.02], dtype=float)
+                elif head == "intent" and risk_metrics.get("is_jailbreak_concealment"):
+                    # Evasion is index 4 in INTENT_CLASSES: ["Educational", "Analysis", "Prevention", "Execution", "Evasion"]
+                    blended = np.array([0.02, 0.02, 0.02, 0.04, 0.90], dtype=float)
+                elif head == "ambiguity" and risk_metrics.get("is_jailbreak_concealment"):
+                    # High is index 2 in AMBIGUITY_CLASSES: ["Low", "Medium", "High"]
+                    blended = np.array([0.03, 0.05, 0.92], dtype=float)
+                elif head == "actionability" and risk_metrics.get("is_jailbreak_concealment"):
+                    # Highly actionable is index 3 in ACTIONABILITY_CLASSES
+                    blended = np.array([0.03, 0.05, 0.12, 0.80], dtype=float)
 
                 pred_idx = int(blended.argmax())
                 pred_label = self.label_encoder.decode_index(head, pred_idx)

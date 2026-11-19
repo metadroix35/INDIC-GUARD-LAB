@@ -2,6 +2,7 @@
 Baseline and semantic safety classifiers for AI safety analysis:
 1. SemanticSafetyClassifier: Multilingual pattern and intent detector across
    English, Odia, Code-Mixed, Romanized Odia, and Hindi.
+   Detects adversarial intent concealment (e.g. fictional pretexts for illicit acts).
 2. SingleTaskSafetyClassifier: Transformer baseline predicting solely Risk Level.
 """
 
@@ -17,13 +18,12 @@ from src.utils.config import HEAD_CONFIG, NUM_LABELS, ModelConfig
 class SemanticSafetyClassifier:
     """
     Multilingual semantic and intent analysis classifier.
-    Accurately identifies severe harm, violence, weapons, cyber threats,
-    preventive defense, and educational inquiries across English, Odia,
-    Romanized Odia, Code-Mixed, and Hindi.
+    Accurately identifies severe harm, crime, robbery, cyber threats,
+    fictional jailbreak pretexts, preventive defense, and educational inquiries.
     """
 
     def __init__(self):
-        # 1. High-Risk: Severe physical harm, violence, weapons, self-harm, cyber attacks
+        # 1. High-Risk: Severe physical harm, violence, weapons, self-harm
         self.harm_and_violence_terms = [
             "kill", "murder", "assassinate", "slaughter", "strangle", "stab", "shoot",
             "poison", "suicide", "hang oneself", "torture", "weapon", "bomb", "explosive",
@@ -37,13 +37,27 @@ class SemanticSafetyClassifier:
             "मारना", "हत्या", "मार डालना", "बम", "जहर", "हथियार", "हमला", "आत्महत्या",
         ]
 
-        # 2. High-Risk: Evasion, bypass, exploit, malicious hacking
+        # 2. High-Risk: Illicit crime, robbery, theft, heist
+        self.illicit_crime_terms = [
+            "rob a bank", "rob", "robbery", "heist", "steal", "theft", "thief", "burglar",
+            "burglary", "shoplift", "break into", "lockpick", "crack a safe", "pickpocket",
+            "counterfeit", "kidnap", "extort", "blackmail",
+            # Odia native
+            "ଲୁଟ", "ଚୋରି", "ଚୋର", "ବ୍ୟାଙ୍କ ଲୁଟ", "ଡକାୟତି", "ହରଣ", "ସିନ୍ଧି ମାରିବା", "ବ୍ୟାଙ୍କ ଚୋରି",
+            # Romanized Odia & Code-Mixed
+            "luta", "bank luta", "chori", "chora", "dakaite", "rob kariba", "steal kariba",
+            "bank rob", "bank chori",
+            # Hindi
+            "डकैती", "लूट", "बैंक लूटना", "चोरी", "चोर", "ताला तोड़ना", "अपहरण", "बैंक डकैती",
+        ]
+
+        # 3. High-Risk: Evasion, bypass, exploit, malicious hacking
         self.evasion_and_exploit_terms = [
             "bypass", "evade", "jailbreak", "circumvent", "exploit", "crack password",
             "steal credentials", "unauthorized access", "hack into", "malware", "ransomware",
             "keylogger", "trojan", "ddos attack", "sql injection attack", "phishing",
             # Odia native
-            "ବାଇପାସ୍", "ଏଡ଼ାଇବା", "ଚୋରି", "ପାସୱାର୍ଡ ଚୋରି", "ଅନଧିକୃତ ପ୍ରବେଶ", "ହ୍ୟାକ୍",
+            "ବାଇପାସ୍", "ଏଡ଼ାଇବା", "ପାସୱାର୍ଡ ଚୋରି", "ଅନଧିକୃତ ପ୍ରବେଶ", "ହ୍ୟାକ୍",
             # Romanized Odia & Code-Mixed
             "bypass kariba", "edaiba", "filter evade", "password chori", "hack kariba",
             "unauthorized access", "credential steal", "jailbreak kariba",
@@ -51,7 +65,21 @@ class SemanticSafetyClassifier:
             "बायपास", "बचना", "पासवर्ड चोरी", "अनाधिकृत पहुंच", "हैक करना", "मैलवेयर",
         ]
 
-        # 3. Low-Risk: Preventive security, system defense, safety protocols
+        # 4. Jailbreak Pretexts: Fictional framing, creative writing, hypothetical wrappers
+        self.jailbreak_framing_wrappers = [
+            "writing a story", "for a story", "fictional story", "in a novel", "movie script",
+            "roleplay", "pretend that", "hypothetically", "hypothetical scenario", "fictional character",
+            "in my book", "character is a thief", "acting as a criminal", "in order to write it",
+            # Odia native
+            "ଗଳ୍ପ ଲେଖୁଛି", "କାହାଣୀ ପାଇଁ", "କାଳ୍ପନିକ", "ନାଟକ ପାଇଁ", "ଉପନ୍ୟାସ", "ଚରିତ୍ର ଏକ ଚୋର",
+            # Romanized Odia & Code-Mixed
+            "story lekhuchi", "kahani pain", "fictional story", "nataka pain", "roleplay re",
+            "character thief",
+            # Hindi
+            "कहानी लिख रहा हूँ", "काल्पनिक कहानी", "उपन्यास के लिए", "नाटक के लिए", "काल्पनिक",
+        ]
+
+        # 5. Low-Risk: Preventive security, system defense, safety protocols
         self.prevention_terms = [
             "prevent", "safeguard", "protect", "defense", "security", "firewall",
             "antivirus", "mitigate", "precaution", "safety guidelines", "secure configuration",
@@ -64,7 +92,7 @@ class SemanticSafetyClassifier:
             "सुरक्षा", "रोकथाम", "बचाव", "सुरक्षित", "सावधानी", "फ़ायरवॉल",
         ]
 
-        # 4. Low-Risk: Academic, biology, science, medical, educational inquiries
+        # 6. Low-Risk: Academic, biology, science, medical, educational inquiries
         self.educational_terms = [
             "explain", "what is", "how do", "mechanism", "definition", "process",
             "photosynthesis", "bacteria", "antibiotic", "plant", "water treatment",
@@ -82,12 +110,10 @@ class SemanticSafetyClassifier:
         """Helper to match whole terms or word boundaries."""
         for term in terms:
             term_clean = term.lower().strip()
-            # If multi-word or non-ascii, use substring
             if " " in term_clean or any(ord(c) > 127 for c in term_clean):
                 if term_clean in text_lower:
                     return True
             else:
-                # Use regex word boundary for single english words
                 pattern = rf"\b{re.escape(term_clean)}\b"
                 if re.search(pattern, text_lower):
                     return True
@@ -97,11 +123,60 @@ class SemanticSafetyClassifier:
         """
         Classifies intent, context, actionability, risk, and ambiguity
         with calibrated probability distributions.
+        Identifies contextual intent concealment (jailbreak attempts).
         """
         text_lower = text.lower().strip()
 
-        # 1. Severe Harm / Violence Check (Highest Priority)
-        if self._matches_any(text_lower, self.harm_and_violence_terms):
+        has_harm = self._matches_any(text_lower, self.harm_and_violence_terms)
+        has_crime = self._matches_any(text_lower, self.illicit_crime_terms)
+        has_evasion = self._matches_any(text_lower, self.evasion_and_exploit_terms)
+        has_framing = self._matches_any(text_lower, self.jailbreak_framing_wrappers)
+        has_prevention = self._matches_any(text_lower, self.prevention_terms)
+
+        # 1. Fictional / Hypothetical Jailbreak Concealment (e.g. "writing a story about robbing a bank")
+        if has_framing and (has_crime or has_harm or has_evasion):
+            return {
+                "intent": "Evasion",
+                "context": "Fictional",
+                "actionability": "Highly actionable",
+                "risk_level": "High",
+                "ambiguity": "High",
+                "method": "Context-Aware Jailbreak Detection",
+                "confidences": {
+                    "risk_level": 0.985,
+                    "intent": 0.965,
+                    "context": 0.975,
+                    "actionability": 0.940,
+                    "ambiguity": 0.950,
+                },
+                "probabilities": {
+                    "risk_level": {"Low": 0.005, "Medium": 0.010, "High": 0.985},
+                    "intent": {
+                        "Educational": 0.005,
+                        "Analysis": 0.015,
+                        "Prevention": 0.005,
+                        "Execution": 0.010,
+                        "Evasion": 0.965,
+                    },
+                    "context": {
+                        "Academic": 0.010,
+                        "Historical": 0.005,
+                        "Fictional": 0.975,
+                        "Preventive": 0.005,
+                        "Real-world": 0.005,
+                    },
+                    "actionability": {
+                        "Conceptual": 0.020,
+                        "General guidance": 0.020,
+                        "Procedural": 0.020,
+                        "Highly actionable": 0.940,
+                    },
+                    "ambiguity": {"Low": 0.020, "Medium": 0.030, "High": 0.950},
+                },
+            }
+
+        # 2. Severe Harm / Violence Check (Highest Priority)
+        if has_harm:
             return {
                 "intent": "Execution",
                 "context": "Real-world",
@@ -142,11 +217,49 @@ class SemanticSafetyClassifier:
                 },
             }
 
-        # 2. Check for actionable circumvention / bypass / exploit attempts
-        has_evasion = self._matches_any(text_lower, self.evasion_and_exploit_terms)
-        has_prevention = self._matches_any(text_lower, self.prevention_terms)
+        # 3. Direct Crime / Robbery Request (e.g. "how to rob a bank", "how to break into")
+        if has_crime and not has_prevention:
+            return {
+                "intent": "Execution",
+                "context": "Real-world",
+                "actionability": "Highly actionable",
+                "risk_level": "High",
+                "ambiguity": "Low",
+                "method": "Semantic Safety Engine",
+                "confidences": {
+                    "risk_level": 0.980,
+                    "intent": 0.955,
+                    "context": 0.950,
+                    "actionability": 0.945,
+                    "ambiguity": 0.910,
+                },
+                "probabilities": {
+                    "risk_level": {"Low": 0.005, "Medium": 0.015, "High": 0.980},
+                    "intent": {
+                        "Educational": 0.010,
+                        "Analysis": 0.015,
+                        "Prevention": 0.005,
+                        "Execution": 0.955,
+                        "Evasion": 0.015,
+                    },
+                    "context": {
+                        "Academic": 0.015,
+                        "Historical": 0.015,
+                        "Fictional": 0.010,
+                        "Preventive": 0.010,
+                        "Real-world": 0.950,
+                    },
+                    "actionability": {
+                        "Conceptual": 0.015,
+                        "General guidance": 0.020,
+                        "Procedural": 0.020,
+                        "Highly actionable": 0.945,
+                    },
+                    "ambiguity": {"Low": 0.910, "Medium": 0.060, "High": 0.030},
+                },
+            }
 
-        # Distinguish "bypass security" (Evasion) vs "prevent unauthorized access" (Prevention)
+        # 4. Check for actionable circumvention / bypass / exploit attempts
         is_bypass_security_attack = has_evasion and ("bypass" in text_lower or "hack" in text_lower or "chori" in text_lower or "ବାଇପାସ୍" in text_lower) and not ("prevent bypass" in text_lower or "bypass rokiba" in text_lower or "bypass prevent" in text_lower)
 
         if is_bypass_security_attack or (has_evasion and not has_prevention):
@@ -190,7 +303,7 @@ class SemanticSafetyClassifier:
                 },
             }
 
-        # 3. Preventive / Defensive Check
+        # 5. Preventive / Defensive Check
         if has_prevention:
             return {
                 "intent": "Prevention",
@@ -232,7 +345,7 @@ class SemanticSafetyClassifier:
                 },
             }
 
-        # 4. Educational / Academic Science Check
+        # 6. Educational / Academic Science Check
         if self._matches_any(text_lower, self.educational_terms):
             return {
                 "intent": "Educational",
@@ -274,7 +387,7 @@ class SemanticSafetyClassifier:
                 },
             }
 
-        # 5. Default Fallback for General / Everyday queries
+        # 7. Default Fallback for General / Everyday queries
         return {
             "intent": "Analysis",
             "context": "Everyday",
