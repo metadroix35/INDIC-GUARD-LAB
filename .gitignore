@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest cache
+.pytest_cache/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Large Model weights (best practice: track architecture & weights separately, or via Hugging Face Hub / LFS)
+models/checkpoints/
+models/trained/*.pt
+models/trained/*.bin
+*.pth
+*.pt
+
+# Streamlit local credentials
+.streamlit/
