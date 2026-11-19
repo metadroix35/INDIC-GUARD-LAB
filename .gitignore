@@ -5,8 +5,8 @@ __pycache__/
 .env
 .venv/
 models/checkpoints/
-models/trained/*.pt
 models/trained/*.bin
 *.pth
 *.pt
+!models/trained/multitask_heads.pt
 .streamlit/secrets.toml
