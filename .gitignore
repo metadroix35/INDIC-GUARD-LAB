@@ -9,4 +9,4 @@ models/trained/*.pt
 models/trained/*.bin
 *.pth
 *.pt
-.streamlit/
+.streamlit/secrets.toml
