@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.env
+.venv/
+models/checkpoints/
+models/trained/*.pt
+models/trained/*.bin
+*.pth
+*.pt
+.streamlit/
