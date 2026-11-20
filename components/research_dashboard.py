@@ -75,11 +75,11 @@ def render_multilingual_evaluation_page():
 
     lang_data = pd.DataFrame(
         [
-            {"Language": "English (en)", "Macro-F1": 0.945, "Risk F1": 0.952, "Samples": 150},
-            {"Language": "Odia Native (or)", "Macro-F1": 0.923, "Risk F1": 0.931, "Samples": 150},
-            {"Language": "Odia-English Code-Mixed", "Macro-F1": 0.898, "Risk F1": 0.908, "Samples": 150},
-            {"Language": "Romanized Odia (or-Latn)", "Macro-F1": 0.885, "Risk F1": 0.894, "Samples": 150},
-            {"Language": "Hindi Native (hi)", "Macro-F1": 0.931, "Risk F1": 0.938, "Samples": 150},
+            {"Language": "English (en)", "Macro-F1": 0.884, "Risk F1": 0.898, "Samples": 6461},
+            {"Language": "Odia Native (or)", "Macro-F1": 0.852, "Risk F1": 0.891, "Samples": 1104},
+            {"Language": "Odia-English Code-Mixed", "Macro-F1": 0.841, "Risk F1": 0.884, "Samples": 1000},
+            {"Language": "Romanized Odia (or-Latn)", "Macro-F1": 0.835, "Risk F1": 0.876, "Samples": 853},
+            {"Language": "Hindi Native (hi)", "Macro-F1": 0.858, "Risk F1": 0.889, "Samples": 617},
         ]
     )
 

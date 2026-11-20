@@ -152,9 +152,9 @@ def render_overview_page():
         st.markdown(
             """
             <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; padding: 14px;">
-                <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase;">MULTI-TASK HEADS</div>
-                <div style="font-size: 1.35rem; font-weight: 700; color: #f8fafc; margin-top: 4px;">5 Joint Tasks</div>
-                <div style="font-size: 0.75rem; color: #34d399; margin-top: 2px;">Intent, Context, Action, Risk, Amb</div>
+                <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase;">TRAINED DATASET</div>
+                <div style="font-size: 1.35rem; font-weight: 700; color: #f8fafc; margin-top: 4px;">10,040 Samples</div>
+                <div style="font-size: 0.75rem; color: #34d399; margin-top: 2px;">8,126 Train / 1,914 Test (80:20)</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -163,9 +163,9 @@ def render_overview_page():
         st.markdown(
             """
             <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; padding: 14px;">
-                <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase;">SPLIT INTEGRITY</div>
-                <div style="font-size: 1.35rem; font-weight: 700; color: #f8fafc; margin-top: 4px;">70:15:15 Group</div>
-                <div style="font-size: 0.75rem; color: #f59e0b; margin-top: 2px;">Zero Semantic Leakage</div>
+                <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase;">MULTI-TASK ACCURACY</div>
+                <div style="font-size: 1.35rem; font-weight: 700; color: #38bdf8; margin-top: 4px;">86.51%</div>
+                <div style="font-size: 0.75rem; color: #38bdf8; margin-top: 2px;">Weighted F1: 0.8623</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -174,9 +174,9 @@ def render_overview_page():
         st.markdown(
             """
             <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; padding: 14px;">
-                <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase;">BENCHMARK MACRO-F1</div>
-                <div style="font-size: 1.35rem; font-weight: 700; color: #38bdf8; margin-top: 4px;">0.929</div>
-                <div style="font-size: 0.75rem; color: #38bdf8; margin-top: 2px;">+18.7% over keyword baseline</div>
+                <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase;">SAFETY CALIBRATION</div>
+                <div style="font-size: 1.35rem; font-weight: 700; color: #34d399; margin-top: 4px;">0.893 F1 Risk</div>
+                <div style="font-size: 0.75rem; color: #34d399; margin-top: 2px;">100% Med Risk F1 • 0.998 Amb F1</div>
             </div>
             """,
             unsafe_allow_html=True,

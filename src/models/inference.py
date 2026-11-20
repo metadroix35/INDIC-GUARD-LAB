@@ -50,26 +50,25 @@ class SafetyInferenceEngine:
         self.model = MultitaskSafetyModel(model_name=model_name_or_path)
         self.is_fine_tuned = False
 
-        # Attempt to load custom fine-tuned weights if available
-        resolved_weights = weights_path or (TRAINED_MODEL_DIR / "best_multitask_model.pt")
-        heads_weights = TRAINED_MODEL_DIR / "multitask_heads.pt"
+        # Attempt to load custom fine-tuned weights in priority order
+        checkpoint_candidates = [
+            TRAINED_MODEL_DIR / "multitask_full_model.pt",
+            TRAINED_MODEL_DIR / "best_multitask_model.pt",
+            TRAINED_MODEL_DIR / "enhanced_heads_phase1.pt",
+            TRAINED_MODEL_DIR / "multitask_heads.pt",
+        ]
+        if weights_path:
+            checkpoint_candidates.insert(0, Path(weights_path))
 
-        if resolved_weights.exists():
-            try:
-                state_dict = torch.load(resolved_weights, map_location=self.device)
-                self.model.load_state_dict(state_dict)
-                self.is_fine_tuned = True
-                logger.info(f"Loaded fine-tuned checkpoint from {resolved_weights}")
-            except Exception as e:
-                logger.warning(f"Could not load checkpoint from {resolved_weights}: {e}")
-        elif heads_weights.exists():
-            try:
-                state_dict = torch.load(heads_weights, map_location=self.device)
-                self.model.heads.load_state_dict(state_dict)
-                self.is_fine_tuned = True
-                logger.info(f"Loaded calibrated heads from {heads_weights}")
-            except Exception as e:
-                logger.warning(f"Could not load heads from {heads_weights}: {e}")
+        for ckpt_path in checkpoint_candidates:
+            if ckpt_path.exists():
+                try:
+                    self.model.load_weights_flexible(ckpt_path)
+                    self.is_fine_tuned = True
+                    logger.info(f"Loaded model weights from {ckpt_path}")
+                    break
+                except Exception as e:
+                    logger.warning(f"Could not load checkpoint from {ckpt_path}: {e}")
 
         self.model.to(self.device)
         self.model.eval()

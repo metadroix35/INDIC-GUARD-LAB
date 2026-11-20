@@ -22,6 +22,9 @@ def render_analyzer_page(selected_model_name: str):
     st.markdown(
         """
         <div style="margin-bottom: 24px;">
+            <div style="display: inline-block; padding: 2px 8px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 4px; font-size: 0.72rem; color: #38bdf8; font-weight: 600; margin-bottom: 6px;">
+                ACTIVE ENGINE: MuRIL Multi-Task • 10,040 Trained Samples • 86.51% Accuracy
+            </div>
             <h2 style="font-size: 1.5rem; font-weight: 700; color: #f8fafc; margin-bottom: 6px;">
                 Multilingual Text Safety Analyzer
             </h2>

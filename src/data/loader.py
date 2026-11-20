@@ -969,6 +969,12 @@ def load_or_create_dataset(
         else:
             raise ValueError(f"Unsupported file format: {filepath.suffix}")
 
+    # Check for full 10k dataset first
+    full_10k_file = PROCESSED_DATA_DIR / "full_dataset_10k.csv"
+    if full_10k_file.exists():
+        logger.info(f"Loading full 10,040-sample benchmark dataset from {full_10k_file}")
+        return pd.read_csv(full_10k_file)
+
     # Fallback to generating sample benchmark
     sample_file = SAMPLE_DATA_DIR / "sample_multilingual_benchmark.csv"
     if sample_file.exists():
